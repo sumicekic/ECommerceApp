@@ -1,4 +1,4 @@
-Bu proje, Yazılım Test dersi ödevi için hazırladığım, bir e-ticaret sisteminin temel işlevlerini C# ile kodlayıp NUnit kullanarak test ettiğim bir uygulamadır.
+Bu proje, Yazılım Test ve Kalitesi dersi ödevi için hazırladığım, bir e-ticaret sisteminin temel işlevlerini C# ile kodlayıp NUnit kullanarak test ettiğim bir uygulamadır.
 
 Projenin amacı, gerçek hayattaki bir e-ticaret akışını (ürün seçme, sepete ekleme, sipariş verme, ödeme yapma) kodlamak ve bu sisteme kasıtlı olarak yerleştirilen hataları farklı test yöntemleriyle tespit etmektir.
 
