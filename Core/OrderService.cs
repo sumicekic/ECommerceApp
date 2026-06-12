@@ -22,18 +22,24 @@ namespace Core
     {
         private static int _orderCounter = 1;
         private List<Order> _orders = new();
+        private const decimal MinimumOrderAmount = 100.0m; // YENİ: Hoca 100 TL min limit istedi
 
         public Order PlaceOrder(Cart cart)
         {
             if (cart.Items.Count == 0)
                 throw new InvalidOperationException("Cart is empty.");
 
-            // 🐛 BUG: Stok düşülmüyor
+            // YENİ: Minimum sipariş tutarı kontrolü
+            // 🐛 YENİ BUG: 100 TL limitini yanlışlıkla 50 TL olarak kontrol ediyor! (Boundary testinde patlayacak)
+            if (cart.GetFinalPrice() < MinimumOrderAmount - 50m)
+                throw new InvalidOperationException("Minimum siparis tutari karsilanmadi.");
+
+            // 🐛 ESKİ BUG: Stok düşülmüyor (Aynen koruduk)
             var order = new Order
             {
                 OrderId = _orderCounter++,
                 Items = new List<(Product, int)>(cart.Items),
-                TotalAmount = cart.TotalPrice(),
+                TotalAmount = cart.GetFinalPrice(), // YENİ: İndirimli fiyatı siparişe yansıtıyoruz
                 Status = OrderStatus.Pending
             };
 
@@ -47,7 +53,7 @@ namespace Core
             if (order.Status != OrderStatus.Pending)
                 throw new InvalidOperationException("Order is not in pending state.");
 
-            // 🐛 BUG: >= yerine > kullanılmış
+            // 🐛 ESKİ BUG: >= yerine > kullanılmış (Aynen koruduk)
             if (amountPaid > order.TotalAmount)
             {
                 order.Status = OrderStatus.Paid;

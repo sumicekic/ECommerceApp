@@ -9,6 +9,15 @@ namespace Core
 
         public IReadOnlyList<(Product product, int quantity)> Items => _items;
 
+        public decimal DiscountPercentage { get; private set; } = 0;
+
+        // YENİ: İndirim Uygulama
+        public void ApplyDiscount(decimal percentage)
+        {
+            // 🐛 YENİ BUG: İndirim oranı %100'den büyük mü veya eksi mi diye kontrol etmiyor! (Boundary testinde patlayacak)
+            DiscountPercentage = percentage;
+        }
+
         public void AddItem(Product product, int quantity)
         {
             if (quantity <= 0)
@@ -36,8 +45,16 @@ namespace Core
 
         public decimal TotalPrice()
         {
-            // 🐛 BUG: fiyat 2 ile çarpılıyor
+            // 🐛 ESKİ BUG: fiyat 2 ile çarpılıyor (Aynen koruduk)
             return _items.Sum(i => i.product.Price * i.quantity * 2);
+        }
+
+        // YENİ: İndirimli Son Fiyatı Hesaplama
+        public decimal GetFinalPrice()
+        {
+            decimal baseTotal = TotalPrice();
+            // 🐛 YENİ BUG: İndirimi 2 katı uyguluyor. %20 girilirse %40 düşüyor. (EP testinde patlayacak)
+            return baseTotal - (baseTotal * (DiscountPercentage * 2) / 100);
         }
 
         public int ItemCount()
@@ -48,6 +65,7 @@ namespace Core
         public void Clear()
         {
             _items.Clear();
+            DiscountPercentage = 0; // Sepet temizlenince indirim de sıfırlansın
         }
     }
 }

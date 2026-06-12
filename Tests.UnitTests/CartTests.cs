@@ -1,85 +1,95 @@
 ﻿using NUnit.Framework;
 using Core;
+using System;
 
 namespace Tests.UnitTests
 {
     [TestFixture]
     public class CartTests
     {
-        private Product _product;
         private Cart _cart;
+        private Product _testProduct;
 
         [SetUp]
         public void Setup()
         {
-            _product = new Product(1, "Laptop", 10000m, 5);
             _cart = new Cart();
+            _testProduct = new Product(1, "Laptop", 1000m, 5);
         }
 
-        // TC-01: WHITE BOX — AddItem geçerli ürün ekleme
         [Test]
-        public void AddItem_ValidProduct_ShouldAddToCart()
+        public void TC01_AddItem_ValidQuantity_IncreasesItemCount() // EP - Geçerli Değer / Black Box
         {
-            _cart.AddItem(_product, 2);
-            Assert.That(_cart.ItemCount(), Is.EqualTo(2));
+            _cart.AddItem(_testProduct, 1);
+            Assert.AreEqual(1, _cart.ItemCount());
         }
 
-        // TC-02: WHITE BOX — Sıfır adet ekleme exception fırlatmalı
         [Test]
-        public void AddItem_ZeroQuantity_ShouldThrowArgumentException()
+        public void TC02_AddItem_ZeroQuantity_ThrowsException() // BVA - Sınır Değer
         {
-            Assert.Throws<System.ArgumentException>(() => _cart.AddItem(_product, 0));
+            Assert.Throws<ArgumentException>(() => _cart.AddItem(_testProduct, 0));
         }
 
-        // TC-03: WHITE BOX — Stok yetersizse exception fırlatmalı
         [Test]
-        public void AddItem_ExceedStock_ShouldThrowInvalidOperationException()
+        public void TC03_AddItem_MoreThanStock_ThrowsException() // BVA - Geçersiz Üst Sınır
         {
-            Assert.Throws<System.InvalidOperationException>(() => _cart.AddItem(_product, 10));
+            Assert.Throws<InvalidOperationException>(() => _cart.AddItem(_testProduct, 6));
         }
 
-        // TC-04: WHITE BOX — TotalPrice BUG testi (FAIL bekleniyor)
         [Test]
-        public void TotalPrice_ShouldReturnCorrectValue()
+        public void TC04_TotalPrice_CalculatesCorrectBasePrice() // Unit Test
         {
-            _cart.AddItem(_product, 2);
-            Assert.That(_cart.TotalPrice(), Is.EqualTo(20000m),
-                "BUG: TotalPrice fiyati 2 ile carpiyor, sonuc yanlis!");
+            _cart.AddItem(_testProduct, 2);
+            // Beklenen 2000, ama vizeden kalan x2 bug'ı yüzünden 4000 dönecek (TEST FAIL OLACAK)
+            Assert.AreEqual(2000m, _cart.TotalPrice());
         }
 
-        // TC-05: BLACK BOX — Ürün sepete eklenince ItemCount artar
         [Test]
-        public void AddItem_ShouldIncreaseItemCount()
+        public void TC05_ApplyDiscount_ValidPercentage_SetsCorrectly() // EP - Geçerli İndirim
         {
-            _cart.AddItem(_product, 1);
-            Assert.That(_cart.ItemCount(), Is.EqualTo(1));
+            _cart.ApplyDiscount(20);
+            Assert.AreEqual(20, _cart.DiscountPercentage);
         }
 
-        // TC-06: BLACK BOX — RemoveItem sonrası sepet boş olmalı
         [Test]
-        public void RemoveItem_ShouldEmptyCart()
+        public void TC06_GetFinalPrice_WithDiscount_CalculatesCorrectly() // Unit Test
         {
-            _cart.AddItem(_product, 1);
-            _cart.RemoveItem(_product.Id);
-            Assert.That(_cart.ItemCount(), Is.EqualTo(0));
+            _cart.AddItem(_testProduct, 1); // 1000 TL
+            _cart.ApplyDiscount(10); // %10 indirim
+            // Yeni eklediğimiz indirim bug'ı var, %20 uygulayacak. (TEST FAIL OLACAK)
+            Assert.AreEqual(900m, _cart.GetFinalPrice());
         }
 
-        // TC-07: BLACK BOX — Clear sonrası sepet tamamen boşalmalı
         [Test]
-        public void Clear_ShouldRemoveAllItems()
+        public void TC07_ApplyDiscount_NegativePercentage_ThrowsException() // BVA - Negatif Değer
         {
-            _cart.AddItem(_product, 2);
+            // İndirim eksi olamaz ama kontol koymadık (Bug). (TEST FAIL OLACAK)
+            Assert.Throws<ArgumentException>(() => _cart.ApplyDiscount(-5));
+        }
+
+        [Test]
+        public void TC08_ApplyDiscount_Over100Percentage_ThrowsException() // BVA - Üst Sınır Aşımı
+        {
+            // %150 indirim olamaz. Kontrol yok (Bug). (TEST FAIL OLACAK)
+            Assert.Throws<ArgumentException>(() => _cart.ApplyDiscount(150));
+        }
+
+        [Test]
+        public void TC09_Clear_EmptiesCartAndResetsDiscount() // Gray Box
+        {
+            _cart.AddItem(_testProduct, 1);
+            _cart.ApplyDiscount(15);
             _cart.Clear();
-            Assert.That(_cart.ItemCount(), Is.EqualTo(0));
+            Assert.AreEqual(0, _cart.ItemCount());
+            Assert.AreEqual(0, _cart.DiscountPercentage);
         }
 
-        // TC-08: GRAY BOX — Aynı ürün iki kez eklenince quantity toplanmalı
         [Test]
-        public void AddItem_SameProductTwice_ShouldAccumulateQuantity()
+        public void TC10_RemoveItem_RemovesCorrectProduct() // Unit Test
         {
-            _cart.AddItem(_product, 1);
-            _cart.AddItem(_product, 2);
-            Assert.That(_cart.ItemCount(), Is.EqualTo(3));
+            _cart.AddItem(_testProduct, 1);
+            _cart.RemoveItem(1);
+            Assert.AreEqual(0, _cart.ItemCount());
         }
     }
 }
